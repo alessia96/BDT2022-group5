@@ -10,8 +10,7 @@ import random
 from random import randrange, randint
 from datetime import timedelta, datetime
 from faker import Faker
-from confluent_kafka import Producer, KafkaException, KafkaError
-import pymongo
+from confluent_kafka import Producer
 from pymongo import MongoClient as Client
 
 # kafka Producer configuration
