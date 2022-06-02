@@ -3,7 +3,6 @@
 # from users clicks generates suggestions based on past behavior, other people behavior and new articles 
 
 import pandas as pd
-import pymongo
 from pymongo import MongoClient as Client
 from datetime import datetime, timedelta
 
