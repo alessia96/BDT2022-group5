@@ -4,14 +4,9 @@
 # replace USERNAME and PASSWORD with your kafka cloud, as CloudKarafka
 # if you use a different sasl mechaninsm look at the documentation of your provider
 
-import json
-import pandas as pd
-import random
-from random import randrange, randint
-from datetime import timedelta, datetime
+from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 
 # Consumer configuration
-from confluent_kafka import Producer, Consumer, KafkaException, KafkaError
 
 topics = ['USERNAME-give_suggestion']
 conf = {'bootstrap.servers': 'rocket-01.srvs.cloudkafka.com:9094',
