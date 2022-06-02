@@ -5,23 +5,12 @@
 # Spark send back suggestions to Kafka. Suggestions are loaded from a mongodb collection
 # Spark write Kafka message infos (clicks) into mongodb collection
 
-
-import pymongo
 from pymongo import MongoClient as Client
 import json
-import pandas as pd
-import random
-from random import randrange, randint
-from datetime import timedelta, datetime
-from faker import Faker
-from confluent_kafka import Producer, KafkaException, KafkaError
-from pyspark import SparkContext
-from pyspark.streaming import StreamingContext
+from confluent_kafka import Producer
 from pyspark.sql import SparkSession
-from pyspark.sql import functions as F
 from pyspark.sql.functions import from_json, col
 from pyspark.sql.types import StringType, StructType, StructField
-from pyspark.sql import SQLContext
 
 
 # define the spark session and add the required packages
