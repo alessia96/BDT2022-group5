@@ -8,8 +8,8 @@ From dictionary to a pandas data frame, connect to MongoDB and save the users in
 
 Producer.py – connect to “USERNAME-click” topic through configuration. Connect to MongoDB and load users and articles data frame. 
 It continually stream data to click topis in a JSON format
--	OUTPUT: Fake collected clicks from a website a dictionary with the article clicked, the user IPV, the postal code and at what time.
-          - random_date(): takes as input a start date and an end date. Returns a random date between the start time and the end time
+  - OUTPUT: Fake collected clicks from a website a dictionary with the article clicked, the user IPV, the postal code and at what time.
+          o random_date(): takes as input a start date and an end date. Returns a random date between the start time and the end time
           
           
 Save_click.py – save the clicks from Kafka streams read through Spark, send suggestion back, and save the clicks data in "clicks" collection in 
@@ -23,18 +23,18 @@ mongoDB
             100. All postal codes have 5 digits and go 100 by 100
           
           o get_suggestion(): query "suggestions" collection in mongoDB and send message on Kafka topic "give_suggestion"
-                 	Read the Spark batch
-                 	For each message in the batch find user in “suggestion” collection in “BDT” database – If the user does not exists, is 
-                     defined by the place [take the nearest place]
-                 	define the suggestion list – base list contains 1 new article, 1 time_popular article, and 1 place_popular article  
-                   if user exists add to the list of suggestions 2 articles based on its past behavior, otherwise 1 place_popular and 1 
-                     time_popular
-                   if the user is in the same page of one of the suggested articles, it is removed from the list. If the user exists it is also 
-                     removed from the collection.
-                 	since it could happen that someone starts to click on all the suggestion and that the lists ends –
-                  If a list is empty, it is simply ignored and we add a link from another list – If all the lists are empty, there are no more 
-                    suggestions
-                 	Send to kafka topic “give_suggestion” the suggested articles [message = {user ipv4, list of article links}]
+                     Read the Spark batch
+                     For each message in the batch find user in “suggestion” collection in “BDT” database – If the user does not exists, is 
+                       defined by the place [take the nearest place]
+                     Define the suggestion list – base list contains 1 new article, 1 time_popular article, and 1 place_popular article  
+                     if user exists add to the list of suggestions 2 articles based on its past behavior, otherwise 1 place_popular and 1 
+                       time_popular
+                     if the user is in the same page of one of the suggested articles, it is removed from the list. If the user exists it is also 
+                       removed from the collection.
+                     since it could happen that someone starts to click on all the suggestion and that the lists ends –
+                     If a list is empty, it is simply ignored and we add a link from another list – If all the lists are empty, there are no more 
+                       suggestions
+                     Send to kafka topic “give_suggestion” the suggested articles [message = {user ipv4, list of article links}]
 
 
 
