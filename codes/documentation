@@ -1,1 +1,23 @@
 # documentation
+User Generator – Through Faker (a Python package that generates fake data for you). The function initialize a dictionary to save users, 
+create a loop that creates an arbitrary n fake people to be saved in a dictionary with their relative IPV4 (append(p.ipv4)) and postal code (append(p.postcode())). 
+From dictionary to a pandas data frame, connect to MongoDB and save the users into “users” collection
+
+Producer – connect to “USERNAME-click” topic through configuration. Connect to MongoDB and load users and articles data frame. 
+It continually stream data to click topis in a JSON format
+-	INPUT: collected clicks from a website
+-	OUTPUT: a dictionary with the article clicked, the user IPV, the postal code and at what time [created with def random_date]
+
+Save_click – save the clicks from Kafka streams read through Spark and send suggestion back
+-	INPUT: a dictionary with the article clicked, the user IPV, the postal code and at what time
+-	OUTPUT: a list of 30 new suggested articles based on postal past behavior (if the user already exists), time and place popular, and newest
+o	Def write_to_mongo  through Spark, write the Kafka stream to MongoDB
+o	Def near_place  obtains the nearest place, it takes the postal code and format it in a way that all postal codes have 5 digits and go 100 by 100
+o	Def get_suggestion  query suggestions collection and send message on Kafka topic "give_suggestion"
+
+Suggestion_generator – produce a dictionary with lists of suggested articles (30 per list) for each user and place. 
+If the user exists the articles are based on past behavior, time and place popular and newest; 
+otherwise time and place popular and newest. For each user and place create the suggestions lists and write on MongoDB collection “suggestion”; 
+delete old suggestion and save new one. If the user is not in DB, load new users, save ipv4 and place in DB and save clicks of last 24 hours 
+
+Consumer – the Kafka consumer receives the suggestion and give the suggestion back to the user
