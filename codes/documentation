@@ -11,13 +11,31 @@ It continually stream data to click topis in a JSON format
 Save_click – save the clicks from Kafka streams read through Spark and send suggestion back
 -	INPUT: a dictionary with the article clicked, the user IPV, the postal code and at what time
 -	OUTPUT: a list of 30 new suggested articles based on postal past behavior (if the user already exists), time and place popular, and newest
-o	Def write_to_mongo = through Spark, write the Kafka stream to MongoDB
-o	Def near_place = obtains the nearest place, it takes the postal code and format it in a way that all postal codes have 5 digits and go 100 by 100
-o	Def get_suggestion = query suggestions collection and send message on Kafka topic "give_suggestion"
+  o	Def write_to_mongo  through Spark, write the Kafka stream to MongoDB
+  o	Def near_place  obtains the nearest place, it takes the postal code divide it by 100, multiplying next by 100. All postal codes have 5 digits and go 100 by 100
+  o	Def get_suggestion  query suggestions collection and send message on Kafka topic "give_suggestion"
+      	Read the Spark batch
+      	For each message in the batch find user in “suggestion” collection in “BDT” database – If the user does not exists, is defined by the place [take the nearest place]
+      	define the suggestion list – base list contains 1 new article, 1 time_popular article, and 1 place_popular article | if user exists add to the list of suggestions 2 articles based on its past behavior
+      	since it could happen that someone starts to click on all the suggestion and that the lists ends – If a list is empty, it is simply ignored and we add a link from another list – If all the lists are empty, there are no more suggestions
+      	Send to kafka topic “give_suggestion” the suggested articles [message = {user ipv4, list of article links}]
+Suggestion_generator – produce a dictionary with lists of suggested articles (30 per list) for each user and place. If the user exists the articles are based on past behavior, time and place popular and newest; otherwise time and place popular and newest. Save and load new users.
+-	to obtain the most popular in the last week we have to take the last week clicks and then count the frequency each article has been read. The time_popular suggestion list will contain the 30 links that have been clicked most
+  o	Initialize empty dict to store links and count {key = article link, value = number of clicks}
+  o	Return list of 30 articles
+-	to get place_popular we consider the nearest postcodes consider postalcodes with a step of 100
+  o	Initialize empty dict where we'll save the suggestion for each base postalcode {key = postalcode, value= list of most clicked articles in that place}
+  o	initialize empty dictionary to store links and count {key = article link, value = number of clicks}
+  o	Return list of 30 articles		
+-	Def get_categories: function to get the most read category articles of a user
+  o	Initialize an empty dict where we’ll save category and count {key = category, value = count}
+  o	Sort the category
+      	If there is only one category, we add a random category to the list
+  o	Initialize empty list where we’ll store the articles links 
+  o	Return list of 30 articles
+-	For each user create suggestion lists and write on MongoDB “suggestions” collection
+  o	Create the dictionary with suggestion {'user-ipv4': str(postalcode), 'past': get_categories(user, articles) | (if user does not exists) None, 'time_popular': time_pop, 'place_popular': place_pop[str(postalcode)], 'new': new_sugg}
+-	Delete old suggestions and write new ones
 
-Suggestion_generator – produce a dictionary with lists of suggested articles (30 per list) for each user and place. 
-If the user exists the articles are based on past behavior, time and place popular and newest; 
-otherwise time and place popular and newest. For each user and place create the suggestions lists and write on MongoDB collection “suggestion”; 
-delete old suggestion and save new one. If the user is not in DB, load new users, save ipv4 and place in DB and save clicks of last 24 hours 
+Consumer – the Kafka consumer receives the suggestion and give the suggestion back to the newspaper websites that requested the service 
 
-Consumer – the Kafka consumer receives the suggestion and give the suggestion back to the user
