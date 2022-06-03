@@ -1,29 +1,34 @@
 # documentation
+
 User Generator – Through Faker (a Python package that generates fake data for you). The function initialize a dictionary to save users, 
 create a loop that creates an arbitrary n fake people to be saved in a dictionary with their relative IPV4 (append(p.ipv4)) and postal code (append(p.postcode())). 
 From dictionary to a pandas data frame, connect to MongoDB and save the users into “users” collection
 
+
 Producer – connect to “USERNAME-click” topic through configuration. Connect to MongoDB and load users and articles data frame. 
 It continually stream data to click topis in a JSON format
--	INPUT: collected clicks from a website
--	OUTPUT: a dictionary with the article clicked, the user IPV, the postal code and at what time [created with def random_date]
-
-Save_click – save the clicks from Kafka streams read through Spark and send suggestion back
--	INPUT: a dictionary with the article clicked, the user IPV, the postal code and at what time
--	OUTPUT: a list of 30 new suggested articles based on postal past behavior (if the user already exists), time and place popular, and newest
+-	OUTPUT: Fake collected clicks from a website a dictionary with the article clicked, the user IPV, the postal code and at what time.
+          - random_date(): takes as input a start date and an end date. Returns a random date between the start time and the end time
+          
+          
+Save_click – save the clicks from Kafka streams read through Spark, send suggestion back, and save the clicks data in "clicks" collection in mongoDB
+-	INPUT: a dictionary with the article clicked, the user IPV, the postal code and at what time (it is the output of Producer.py)
+-	OUTPUT: a list of 30 new suggested articles based on past behavior (if the user already exists), time and place popular, and newest
   o	Def write_to_mongo  through Spark, write the Kafka stream to MongoDB
-  o	Def near_place  obtains the nearest place, it takes the postal code divide it by 100, multiplying next by 100. All postal codes have 5 digits and go 100 by 100
-  o	Def get_suggestion  query suggestions collection and send message on Kafka topic "give_suggestion"
+  o	Def near_place  returns a base postalcode. It takes the postal code of the user divide it by 100, round it, and multiplying next by 100. All postal codes have 5 digits and go 100 by 100
+  o	Def get_suggestion  query "suggestions" collection in mongoDB and send message on Kafka topic "give_suggestion"
       	Read the Spark batch
       	For each message in the batch find user in “suggestion” collection in “BDT” database – If the user does not exists, is defined by the place 
       [take the nearest place]
-      	define the suggestion list – base list contains 1 new article, 1 time_popular article, and 1 place_popular article | 
-      if user exists add to the list of suggestions 2 articles based on its past behavior
-      	since it could happen that someone starts to click on all the suggestion and that the lists ends – 
+      	define the suggestion list – base list contains 1 new article, 1 time_popular article, and 1 place_popular article  
+      if user exists add to the list of suggestions 2 articles based on its past behavior, otherwise 1 place_popular and 1 time_popular
+       if the user is in the same page of one of the suggested articles, it is removed from the list. If the user exists it is also removed from the collection.
+      	since it could happen that someone starts to click on all the suggestion and that the lists ends –
       If a list is empty, it is simply ignored and we add a link from another list – If all the lists are empty, there are no more suggestions
       	Send to kafka topic “give_suggestion” the suggested articles [message = {user ipv4, list of article links}]
 
-Suggestion_generator – produce a dictionary with lists of suggested articles (30 per list) for each user and place. 
+
+Suggestion_generator – produce a dictionary with lists of suggested articles (30 per list) for each user and each place (base postalcode). 
 If the user exists the articles are based on past behavior, time and place popular and newest; otherwise time and place popular and newest. Save and load new users.
 -	to obtain the most popular in the last week we have to take the last week clicks and then count the frequency each article has been read. 
   The time_popular suggestion list will contain the 30 links that have been clicked most
@@ -44,5 +49,5 @@ If the user exists the articles are based on past behavior, time and place popul
   (if user does not exists) None, 'time_popular': time_pop, 'place_popular': place_pop[str(postalcode)], 'new': new_sugg}
 -	Delete old suggestions and write new ones
 
-Consumer – the Kafka consumer receives the suggestion and give the suggestion back to the newspaper websites that requested the service 
+Consumer – the Kafka consumer receives the suggestion and give the suggestions sent by Save_click.py on "give_suggestion" topic. [message = {user ipv4, list of article links}]
 
