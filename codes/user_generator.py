@@ -4,19 +4,24 @@ import pandas as pd
 from pymongo import MongoClient as Client
 from faker import Faker
 
-# init empty dictionary to save users
-users = {'ipv4': [], 'place': []}
+# returns a pandas dataframe containing n fake users 
+# save ipv4 and postalcode
+def generate_users(n:int):
+	# n = number of users to be generated
+	# init empty dictionary to save users
+	users = {'ipv4': [], 'place': []}
+		
+	for i in range(n):
+		# create fake persone
+		p = Faker()
+		# save in the dictionary ipv4 and place of the fake person
+		users['ipv4'].append(p.ipv4())
+		users['place'].append(p.postalcode())
 
+	# tranform the dictionary into a pandas dataframe
+	users = pd.DataFrame(users)
+	return users
 
-for i in range(1000000):
-	# create fake persone
-	p = Faker()
-	# save in the dictionary ipv4 and place of the fake person
-	users['ipv4'].append(p.ipv4())
-	users['place'].append(p.postcode())
-
-# tranform the dictionary into a pandas dataframe
-users = pd.DataFrame(users)
 
 # connect to mongo database
 db = Client("mongodb://127.0.0.1/")
