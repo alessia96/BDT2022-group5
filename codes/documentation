@@ -1,53 +1,86 @@
 # documentation
 
-User Generator – Through Faker (a Python package that generates fake data for you). The function initialize a dictionary to save users, 
-create a loop that creates an arbitrary n fake people to be saved in a dictionary with their relative IPV4 (append(p.ipv4)) and postal code (append(p.postcode())). 
+User_generator.py – Through Faker (a Python package that generates fake data for you). The function initialize a dictionary to save users, 
+create a loop that creates an arbitrary n fake people to be saved in a dictionary with their relative IPV4 (append(p.ipv4)) and postal 
+code (append(p.postcode())). 
 From dictionary to a pandas data frame, connect to MongoDB and save the users into “users” collection
 
 
-Producer – connect to “USERNAME-click” topic through configuration. Connect to MongoDB and load users and articles data frame. 
+Producer.py – connect to “USERNAME-click” topic through configuration. Connect to MongoDB and load users and articles data frame. 
 It continually stream data to click topis in a JSON format
 -	OUTPUT: Fake collected clicks from a website a dictionary with the article clicked, the user IPV, the postal code and at what time.
           - random_date(): takes as input a start date and an end date. Returns a random date between the start time and the end time
           
           
-Save_click – save the clicks from Kafka streams read through Spark, send suggestion back, and save the clicks data in "clicks" collection in mongoDB
--	INPUT: a dictionary with the article clicked, the user IPV, the postal code and at what time (it is the output of Producer.py)
--	OUTPUT: a list of 30 new suggested articles based on past behavior (if the user already exists), time and place popular, and newest
-  o	Def write_to_mongo  through Spark, write the Kafka stream to MongoDB
-  o	Def near_place  returns a base postalcode. It takes the postal code of the user divide it by 100, round it, and multiplying next by 100. All postal codes have 5 digits and go 100 by 100
-  o	Def get_suggestion  query "suggestions" collection in mongoDB and send message on Kafka topic "give_suggestion"
-      	Read the Spark batch
-      	For each message in the batch find user in “suggestion” collection in “BDT” database – If the user does not exists, is defined by the place 
-      [take the nearest place]
-      	define the suggestion list – base list contains 1 new article, 1 time_popular article, and 1 place_popular article  
-      if user exists add to the list of suggestions 2 articles based on its past behavior, otherwise 1 place_popular and 1 time_popular
-       if the user is in the same page of one of the suggested articles, it is removed from the list. If the user exists it is also removed from the collection.
-      	since it could happen that someone starts to click on all the suggestion and that the lists ends –
-      If a list is empty, it is simply ignored and we add a link from another list – If all the lists are empty, there are no more suggestions
-      	Send to kafka topic “give_suggestion” the suggested articles [message = {user ipv4, list of article links}]
+Save_click.py – save the clicks from Kafka streams read through Spark, send suggestion back, and save the clicks data in "clicks" collection in 
+mongoDB
+  - INPUT: a dictionary with the article clicked, the user IPV, the postal code and at what time (it is the output of Producer.py)
+  - OUTPUT: a list of 30 new suggested articles based on past behavior (if the user already exists), time and place popular, and newest
+
+          o def write_to_mongo(): through Spark, write the Kafka stream to MongoDB
+  
+          o near_place(): returns a base postalcode. It takes the postal code of the user divide it by 100, round it, and multiplying next by 
+            100. All postal codes have 5 digits and go 100 by 100
+          
+          o get_suggestion(): query "suggestions" collection in mongoDB and send message on Kafka topic "give_suggestion"
+                 	Read the Spark batch
+                 	For each message in the batch find user in “suggestion” collection in “BDT” database – If the user does not exists, is 
+                     defined by the place [take the nearest place]
+                 	define the suggestion list – base list contains 1 new article, 1 time_popular article, and 1 place_popular article  
+                   if user exists add to the list of suggestions 2 articles based on its past behavior, otherwise 1 place_popular and 1 
+                     time_popular
+                   if the user is in the same page of one of the suggested articles, it is removed from the list. If the user exists it is also 
+                     removed from the collection.
+                 	since it could happen that someone starts to click on all the suggestion and that the lists ends –
+                  If a list is empty, it is simply ignored and we add a link from another list – If all the lists are empty, there are no more 
+                    suggestions
+                 	Send to kafka topic “give_suggestion” the suggested articles [message = {user ipv4, list of article links}]
 
 
-Suggestion_generator – produce a dictionary with lists of suggested articles (30 per list) for each user and each place (base postalcode). 
-If the user exists the articles are based on past behavior, time and place popular and newest; otherwise time and place popular and newest. Save and load new users.
--	to obtain the most popular in the last week we have to take the last week clicks and then count the frequency each article has been read. 
-  The time_popular suggestion list will contain the 30 links that have been clicked most
-  o	Initialize empty dict to store links and count {key = article link, value = number of clicks}
-  o	Return list of 30 articles
--	to get place_popular we consider the nearest postcodes consider postalcodes with a step of 100
-  o	Initialize empty dict where we'll save the suggestion for each base postalcode {key = postalcode, value= list of most clicked articles in that place}
-  o	initialize empty dictionary to store links and count {key = article link, value = number of clicks}
-  o	Return list of 30 articles		
--	Def get_categories: function to get the most read category articles of a user
-  o	Initialize an empty dict where we’ll save category and count {key = category, value = count}
-  o	Sort the category
-      	If there is only one category, we add a random category to the list
-  o	Initialize empty list where we’ll store the articles links 
-  o	Return list of 30 articles
--	For each user create suggestion lists and write on MongoDB “suggestions” collection
-  o	Create the dictionary with suggestion {'user-ipv4': str(postalcode), 'past': get_categories(user, articles) | 
-  (if user does not exists) None, 'time_popular': time_pop, 'place_popular': place_pop[str(postalcode)], 'new': new_sugg}
--	Delete old suggestions and write new ones
 
-Consumer – the Kafka consumer receives the suggestion and give the suggestions sent by Save_click.py on "give_suggestion" topic. [message = {user ipv4, list of article links}]
+Suggestion_generator.py – produce a dictionary with lists of suggested articles (30 per list) for each user and each place (base postalcode). 
+If the user exists the articles are based on past behavior, time and place popular and newest; otherwise time and place popular and newest. Save 
+and load new users.
+
+  - to obtain the most popular in the last week we have to take the last week clicks and then count the frequency each article has been read. 
+    The time_popular suggestion list will contain the 30 links that have been clicked most in the last week by all the users
+          o Initialize empty dict to store links and count {key = article link, value = number of clicks}
+          o Produce a list of 30 articles most clicked
+
+  - to get place_popular we consider the nearest postcodes consider postalcodes with a step of 100
+          o Initialize empty dict where we'll save the suggestion for each base postalcode {key = postalcode, value= list of most clicked articles 
+            in that place}
+          o Initialize empty dictionary to store links and count {key = article link, value = number of clicks}
+          o Return list of 30 articles most clicked		
+
+  - get_categories(): function to get the most read category articles of a user
+          o Initialize an empty dict where we’ll save category and count {key = category, value = count}
+          o Sort the categories
+                     If there is only one category, we add a random category to the list that is different to the one already present
+          o Produce a list of 30 articles links belonging to the two most read categories - 15 links per category
+  
+  - For each user create suggestion lists and write on MongoDB “suggestions” collection
+          o Create the dictionary with suggestion {'user-ipv4': user, 'past': get_categories(user, articles) | if user does not exists put None |
+           'time_popular': time_pop, 'place_popular': place_pop[str(base_postalcode)], 'new': new_sugg}
+                     user: user-ipv4 from "clicks" collection
+                     get_categories(user, articles):
+                              * user: user-ipv4 from "clicks" collection
+                              * articles: pandas dataframe from "articles" collection
+                     time_pop: list of 30 most read articles in the last week
+                     place_pop[str(base_postalcode)]: 
+                              * base_postalcode: postalcode of the user rounded to the nearest 100 digit
+                              * place_pop: dictionary containing the 30 most read earticles per base postalcode
+                     new_sugg: list of 30 new articles (published in the last week)
+          o create a pandas dataframe from the dictionary above [new_suggestions]
+          o delete old suggestions 
+          o write new_suggestions on "suggestions" collection in mongoDB
+          
+  - save new users found in the "clicks" collection in "users" collection
+          o take the clicks of the last 24 hours 
+          o for each non-existing user insert one row on the collection: {'ipv4': u['user-ipv4'], 'place': u['place']}
+
+
+
+Consumer – the Kafka consumer receives the suggestion and give the suggestions sent by Save_click.py on "give_suggestion" topic. 
+[message = {user ipv4, list of article links}]
 
