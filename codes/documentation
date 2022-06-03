@@ -11,9 +11,9 @@ It continually stream data to click topis in a JSON format
 Save_click – save the clicks from Kafka streams read through Spark and send suggestion back
 -	INPUT: a dictionary with the article clicked, the user IPV, the postal code and at what time
 -	OUTPUT: a list of 30 new suggested articles based on postal past behavior (if the user already exists), time and place popular, and newest
-o	Def write_to_mongo  through Spark, write the Kafka stream to MongoDB
-o	Def near_place  obtains the nearest place, it takes the postal code and format it in a way that all postal codes have 5 digits and go 100 by 100
-o	Def get_suggestion  query suggestions collection and send message on Kafka topic "give_suggestion"
+o	Def write_to_mongo = through Spark, write the Kafka stream to MongoDB
+o	Def near_place = obtains the nearest place, it takes the postal code and format it in a way that all postal codes have 5 digits and go 100 by 100
+o	Def get_suggestion = query suggestions collection and send message on Kafka topic "give_suggestion"
 
 Suggestion_generator – produce a dictionary with lists of suggested articles (30 per list) for each user and place. 
 If the user exists the articles are based on past behavior, time and place popular and newest; 
