@@ -1,5 +1,5 @@
 # if get error trying to run, copy and paste the line below (remember to change the path!)
-# spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.3,org.mongodb.spark:mongo-spark-connector_2.12:3.0.1 /PATH/save_click.py
+# spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.3,org.mongodb.spark:mongo-spark-connector_2.12:3.0.1 /PATH/click_streaming.py
 
 # read Kafka messages through Spark (pyspark). 
 # Spark send back suggestions to Kafka. Suggestions are loaded from a mongodb collection
